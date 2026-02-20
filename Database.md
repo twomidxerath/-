@@ -219,6 +219,15 @@ SELECT * FROM Student ORDER BY 학번 DESC;
 -- DESC는 내림차순, ASC는 오름차순으로 정렬하라는 뜻.
 ```
 
+만약 값이 같은 값끼리 다른 컬럼을 사용해 또다시 우선순위를 부여하고 싶은 경우, , 를 사용해 뒤에 추가적인 정렬 기준을 붙이면 된다.
+
+```sql
+SELECT ID, LENGTH 
+FROM FISH_INFO
+ORDER BY LENGTH DESC, ID ASC
+LIMIT 10;
+-- 프로그래머스 문제 발췌. 생선을 길이로 내림차순 정렬하고, 값이 같은 것들끼리는 id로 오름차순 정렬하는 코드. 맨 뒤에 붙은 LIMIT 10은 10까지 보여주라는 의미이다.
+```
 
 ### 데이터 통계 내기
 
@@ -272,16 +281,81 @@ SELECT : 어떤 열을 출력할지를 결정.
 ORDER BY : 결정된 데이터들을, 어떤 순서로 출력할지 결정.
 
 
+### JOIN
+
+JOIN에는 크게 네 종류가 있다.
+
+INNER JOIN : 두 테이블 모두에 공통으로 존재하는 데이터만 교집합처럼 가져옴.
+
+LEFT OUTER JOIN : 왼쪽 테이블은 무조건 가져오고, 오른쪽 테이블에서 조건이 맞는 것만 붙여준다. 짝이 없는 빈칸은 NULL처리한다.
+
+RIGHT OUTER JOIN : LEFT OUTER JOIN의 반대다.
+
+FULL OUTER JOIN : 양쪽 테이블의 모든 데이터를 합집합처럼 전부 살린다.
 
 
+```sql
+SELECT Student.이름, Enrollment.과목코드
+FROM Student
+INNER JOIN Enrollment
+ON Student.학번 = Enrollment.학번;
+
+-- Student 테이블과 Enrollment 테이블을 합치되, ON 뒤에 붙은 조건처럼 학번이 같은 데이터끼리만 짝을 지어서 이름과 과목코드를 출력한다.
+```
+
+위 코드는 INNER JOIN의 코드지만, 다른 JOIN 방식도 사용 방식은 동일하다. 출력하는 결과가 다를 뿐.
+
+참고로, MYSQL에서는 FULL OUTER JOIN은 지원하지 않기 때문에, LEFT OUTER JOIN, RIGHT OUTER JOIN을 각각 사용한 후 두 결과를 합쳐야 한다.
 
 
+## 서브쿼리
+
+쿼리 안에 또다른 쿼리가 위치하는 것을 서브쿼리라고 부른다. 다른 언어에서, 함수의 결괏값을 다른 함수의 인자로 집어넣는 것과 비슷하다고 볼 수 있다. JOIN만으로 해결하기 까다로운 복잡한 조건들도 처리할 수 있는 것이 장점이다.
+
+1. 중첩 서브쿼리
+
+WHERE 절에는 집계 함수, COUNT나 AVG, SUM 등을 사용할 수 없다. 때문에 학교 평균 평점보다 높은 학생들을 찾기 위해서는, 서브쿼리가 필수적이다.
+
+```sql
+SELECT 이름, GPA
+FROM Student
+WHERE GPA > (
+    SELECT AVG(GPA)   -- 이 서브쿼리가 먼저 실행되어서 '3.6' 같은 단일 숫자로 변환돼!
+    FROM Student
+);
+```
+
+2. 인라인 뷰
+
+FROM절에 들어가는 서브쿼리이다. 이 방식은 서브쿼리의 결과를 마칯 임시 테이블처럼 취급하는 방식이다. 
+
+```sql
+SELECT 임시테이블.이름, 임시테이블.GPA
+FROM (
+    -- 소프트웨어학과 학생만 걸러낸 가상 테이블(인라인 뷰) 생성
+    SELECT 학번, 이름, GPA 
+    FROM Student 
+    WHERE 전공 = '소프트웨어학과'
+) AS 임시테이블   -- 이 임시 테이블에 반드시 별명(Alias)을 붙여줘야 해!
+WHERE 임시테이블.GPA >= 4.0;
+```
 
 
+3. 스칼라 서브쿼리
 
+SELECT절에 들어가는 쿼리이다. 
 
-
-
+```sql
+SELECT 
+    이름,
+    (
+        -- 각 학생(바깥쪽 쿼리의 학번)마다 수강 중인 과목 개수를 세는 쿼리
+        SELECT COUNT(*) 
+        FROM Enrollment 
+        WHERE Enrollment.학번 = Student.학번
+    ) AS 수강과목수
+FROM Student;
+```
 
 
 
